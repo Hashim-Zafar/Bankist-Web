@@ -1,0 +1,190 @@
+'use strict';
+
+///////////////////////////////////////
+// Modal window
+const btntoscroll = document.querySelector('.btn--scroll-to');
+const toscrollto = document.querySelector('#section--1');
+const header = document.querySelector('.header');
+const modal = document.querySelector('.modal');
+const overlay = document.querySelector('.overlay');
+const btnCloseModal = document.querySelector('.btn--close-modal');
+const btnsOpenModal = document.querySelectorAll('.btn--show-modal');
+
+const openModal = function () {
+  modal.classList.remove('hidden');
+  overlay.classList.remove('hidden');
+};
+
+const closeModal = function () {
+  modal.classList.add('hidden');
+  overlay.classList.add('hidden');
+};
+
+for (let i = 0; i < btnsOpenModal.length; i++)
+  btnsOpenModal[i].addEventListener('click', openModal);
+
+btnCloseModal.addEventListener('click', closeModal);
+overlay.addEventListener('click', closeModal);
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+    closeModal();
+  }
+});
+//****sticky nav
+const nav = document.querySelector('.nav');
+const Header = document.querySelector('.header');
+const navHeight = nav.getBoundingClientRect().height;
+const stickyNav = function (entries) {
+  const [entry] = entries;
+  if (!entry.isIntersecting) {
+    nav.classList.add('sticky');
+  } else {
+    nav.classList.remove('sticky');
+  }
+};
+const headerObserver = new IntersectionObserver(stickyNav, {
+  root: null,
+  threshold: 0,
+  rootMargin: `-${navHeight}px`,
+});
+headerObserver.observe(Header);
+//**** Revealing Elements on scroll
+const sections = document.querySelectorAll('.section');
+const revealScroll = function (entries, observer) {
+  const [entry] = entries;
+  if (!entry.isIntersecting) return;
+  entry.target.classList.remove('section--hidden');
+  observer.unobserve(entry.target);
+};
+const sectionObserver = new IntersectionObserver(revealScroll, {
+  root: null,
+  threshold: 0.15,
+});
+sections.forEach(function (section) {
+  section.classList.add('section--hidden');
+  sectionObserver.observe(section);
+});
+//**** Lazy loading images
+const targetImg = document.querySelectorAll('img[data-src]');
+const lazyImage = function (entries, observer) {
+  const [entry] = entries;
+  if (!entry.isIntersecting) return;
+  entry.target.src = entry.target.dataset.src;
+
+  entry.target.addEventListener('load', function () {
+    entry.target.classList.remove('lazy-img');
+  });
+};
+const imageObserver = new IntersectionObserver(lazyImage, {
+  root: null,
+  threshold: 0,
+  rootMargin: '200px',
+});
+targetImg.forEach(function (img) {
+  imageObserver.observe(img);
+});
+//****Menu fade animation
+const hoverHandler = function (e, opacity) {
+  if (e.target.classList.contains('nav__link')) {
+    const link = e.target;
+    const siblings = link.closest('.nav').querySelectorAll('.nav__link');
+    const logo = link.closest('.nav').querySelector('img');
+    siblings.forEach(el => {
+      if (el !== link) {
+        el.style.opacity = this;
+      }
+    });
+    logo.style.opacity = this;
+  }
+};
+
+nav.addEventListener('mouseover', hoverHandler.bind(0.5));
+nav.addEventListener('mouseout', hoverHandler.bind(1));
+//****Building tabbed component
+const tabs = document.querySelectorAll('.operations__tab');
+const tabscontainer = document.querySelector('.operations__tab-container');
+const tabscontent = document.querySelectorAll('.operations__content');
+tabscontainer.addEventListener('click', function (e) {
+  const clicked = e.target.closest('.operations__tab');
+  //guard clause
+  if (!clicked) return;
+  tabs.forEach(t => {
+    t.classList.remove('operations__tab--active');
+  });
+  tabscontent.forEach(t => {
+    t.classList.remove('operations__content--active');
+  });
+  clicked.classList.add('operations__tab--active');
+  document
+    .querySelector(`.operations__content--${clicked.dataset.tab}`)
+    .classList.add('operations__content--active');
+});
+//****Building a slider
+const slides = document.querySelectorAll('.slide');
+const rightbtn = document.querySelector('.slider__btn--right');
+const leftbtn = document.querySelector('.slider__btn--left');
+let curslide = 0;
+const maxSlide = slides.length;
+//function for changing slides
+const gotoSilde = function (slide) {
+  slides.forEach((s, i) => {
+    s.style.transform = `translateX(${100 * (i - slide)}%)`;
+  });
+};
+//function to activate dot
+const activateDot = function (slide) {
+  document.querySelectorAll('.dots__dot').forEach(dot => {
+    dot.classList.remove('dots__dot--active');
+  });
+  document
+    .querySelector(`.dots__dot[data-slide="${slide}"]`)
+    .classList.add('dots__dot--active');
+};
+//function to create dot
+const dotContainer = document.querySelector('.dots');
+const createDots = function () {
+  slides.forEach(function (_, i) {
+    dotContainer.insertAdjacentHTML(
+      'beforeend',
+      `<button class="dots__dot" data-slide="${i}"></button>`
+    );
+  });
+};
+createDots();
+gotoSilde(curslide);
+//right btn
+const nextSlide = function () {
+  if (curslide === maxSlide - 1) {
+    curslide = 0;
+  } else {
+    curslide++;
+  }
+  gotoSilde(curslide);
+  activateDot(curslide);
+};
+rightbtn.addEventListener('click', nextSlide);
+//left btn
+const prevSlide = function () {
+  if (curslide === 0) {
+    curslide = maxSlide - 1;
+  } else {
+    curslide--;
+  }
+  gotoSilde(curslide);
+  activateDot(curslide);
+};
+leftbtn.addEventListener('click', prevSlide);
+//changing slides if right and left keys are pressed
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'ArrowLeft') prevSlide();
+  if (e.key === 'ArrowRight') nextSlide();
+});
+//switching slides using dots
+dotContainer.addEventListener('click', function (e) {
+  if (e.target.classList.contains('dots__dot')) {
+    curslide = e.target.dataset.slide;
+    gotoSilde(curslide);
+    activateDot(curslide);
+  }
+});
